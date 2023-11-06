@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Robot Controls</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" />
+    <link rel="stylesheet" href="assets/styles.css" />
+    <script src="assets/js.js" defer></script>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Robot Controls</h1>
+      <button id="forwardButton"><i class="fas fa-arrow-up"></i></button>
+      <br />
+      <button id="leftButton"><i class="fas fa-arrow-left"></i></button>
+      <button id="stopButton"><i class="fas fa-stop"></i></button>
+      <button id="rightButton"><i class="fas fa-arrow-right"></i></button>
+      <br />
+      <button id="backwardButton"><i class="fas fa-arrow-down"></i></button>
+      <div class="slider">
+        <h3>PWM Speed: <span id="speed">%SLIDERVALUE%</span></h3>
+        <input
+          type="range"
+          min="0"
+          max="255"
+          value="%SLIDERVALUE%"
+          id="slider"
+          step="5"
+          oninput="updateSliderPWM(this)"
+        />
+      </div>
+    </div>
+  </body>
+</html>
