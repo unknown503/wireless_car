@@ -11,6 +11,7 @@ byte IN2 = 26;
 byte ENB_pin = 32;
 byte IN3 = 25;
 byte IN4 = 33;
+byte led = 2;
 
 const byte pwm_channel = 0;
 const byte frequency = 30000;
@@ -112,6 +113,7 @@ void setup() {
   pinMode(IN2, OUTPUT);
   pinMode(IN3, OUTPUT);
   pinMode(IN4, OUTPUT);
+  pinMode(led, OUTPUT);
 
   ledcSetup(pwm_channel, frequency, resolution);
   ledcAttachPin(ENA_pin, pwm_channel);
@@ -127,8 +129,12 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting...");
+    digitalWrite(led, HIGH);
+    delay(200);
+    digitalWrite(led, LOW);
   }
 
+  digitalWrite(led, HIGH);
   Serial.println(WiFi.localIP());
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -139,7 +145,7 @@ void setup() {
     const char *param = "value";
     if (request->hasParam(param)) {
       String value = request->getParam(param)->value();
-      Serial.println("Speed: "+value);
+      Serial.println("Speed: " + value);
       carSpeed = value;
       ledcWrite(pwm_channel, carSpeed.toInt());
     }
