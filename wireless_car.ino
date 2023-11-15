@@ -1,9 +1,12 @@
-#include <WiFi.h>
-#include <AsyncTCP.h>
+#include <WiFiManager.h>
 #include <ESPAsyncWebServer.h>
+#include <AsyncTCP.h>
 
-const char *ssid = "null";
-const char *password = "fffe026ffe9a";
+#define SOUND_SPEED 0.034
+#define MAX_FORWARD_DISTANCE 25
+
+byte trigger = 12;
+byte echo = 13;
 
 byte ENA_pin = 14;
 byte IN1 = 27;
@@ -18,6 +21,7 @@ const byte frequency = 30000;
 const byte resolution = 8;
 
 String carSpeed = "80";
+String direction = "0";
 
 enum STATES {
   STOP,
@@ -104,9 +108,36 @@ void move(int direction) {
   }
 }
 
+int getFrontDistance() {
+  digitalWrite(trigger, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigger, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigger, LOW);
+
+  int pulse = pulseIn(echo, HIGH);
+
+  int distance = pulse * SOUND_SPEED / 2;
+
+  Serial.println("Distance " + String(distance));
+  return distance;
+}
+
 void setup() {
   Serial.begin(115200);
-  delay(1000);
+
+  WiFiManager wm;
+  // wm.resetSettings();
+
+  bool res = wm.autoConnect("ESPCar", "esp123123");
+
+  if (!res) {
+    Serial.println("Failed to connect");
+  } else {
+    Serial.println("Connected");
+    digitalWrite(led, HIGH);
+  }
+
   pinMode(ENA_pin, OUTPUT);
   pinMode(ENB_pin, OUTPUT);
   pinMode(IN1, OUTPUT);
@@ -114,6 +145,9 @@ void setup() {
   pinMode(IN3, OUTPUT);
   pinMode(IN4, OUTPUT);
   pinMode(led, OUTPUT);
+
+  pinMode(echo, INPUT);
+  pinMode(trigger, OUTPUT);
 
   ledcSetup(pwm_channel, frequency, resolution);
   ledcAttachPin(ENA_pin, pwm_channel);
@@ -124,18 +158,6 @@ void setup() {
   digitalWrite(IN2, LOW);
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, LOW);
-
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting...");
-    digitalWrite(led, HIGH);
-    delay(200);
-    digitalWrite(led, LOW);
-  }
-
-  digitalWrite(led, HIGH);
-  Serial.println(WiFi.localIP());
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send_P(200, "text/html", index_html, processor);
@@ -155,7 +177,7 @@ void setup() {
   server.on("/move", HTTP_GET, [](AsyncWebServerRequest *request) {
     const char *param = "direction";
     if (request->hasParam(param)) {
-      String direction = request->getParam(param)->value();
+      direction = request->getParam(param)->value();
       Serial.println("Moving: " + direction);
       move(direction.toInt());
     }
@@ -166,4 +188,8 @@ void setup() {
 }
 
 void loop() {
+  int distance = getFrontDistance();
+  if (distance <= MAX_FORWARD_DISTANCE && direction.toInt() == FORWARD)
+    move(STOP);
+  delay(250);
 }
